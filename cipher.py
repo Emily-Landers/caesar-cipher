@@ -1,63 +1,53 @@
 from corpus_loader import word_list, name_list
+import re
 
-def encrypt(string, key):
-	newLetters = []
-	newKey = key % 26
-	for letter in string:
-		newLetters.append(getNewLetter(letter, newKey))
-	return "".join(newLetters)
-def getNewLetter(letter, key):
-    if letter == " ":
-        return " "
-    elif ord(letter) > 64:
-        newLetterCode = ord(letter) + key
-        print(newLetterCode)
-        return chr(newLetterCode) if newLetterCode <= 122 else chr(96 + newLetterCode % 122)
+alpha = "abcdefghijklmnopqrstuvwxyz"
+
+def encrypt(message, key):
+  final_message = ''
+  if key < 0:
+    key = key % 26
+    print(key)
+  for character in message:
+    if not character.isalpha():
+      final_message += character
     else:
-        return letter
+      alpha_index=alpha.find(character.lower())
+      alpha_index += key
+      if alpha_index >= len(alpha):
+        alpha_index -= len(alpha)
+      elif alpha_index < 0:
+        alpha_index += len(alpha)
+      if character.isupper():
+        letter = alpha[alpha_index]
+        final_message += letter.upper()
+      if character.islower():
+        final_message += alpha[alpha_index]
+  return final_message
 
-def decrypt(encrypted, key):
-    newLetters = []
-    newKey = key % 26
-    for letter in encrypted:
-        newLetters.append(getNewLetters(letter, newKey))
-    return "".join(newLetters)
-def getNewLetters(letter, key):
-    if letter == " ":
-        return " "
-    elif ord(letter) > 64:
-        newLetterCode = ord(letter) - key
-        print(newLetterCode)
-        return chr(newLetterCode) if newLetterCode <= 122 else chr(96 + newLetterCode % 122)
-    else:
-        return letter
+def decrypt(message, key):
 
-def crack(text):
-    candidates = []
-    for phrase in range(26):
-        candidates.append(encrypt(text, phrase))
+  return encrypt(message, -key)
 
-    for i in candidates:
-        word_count = count_words(phrase)
-        percentage = int(word_count / len(i.split()) * 100)
-        if percentage > 50:
-            return phrase
+
+
+def crack(message):
+  key = 0
+  percentage = 0
+  for a in alpha:
+    verified_words=0
+    key += 1
+    cracked_msg = decrypt(message, key)
+    cracked_msg_verify = cracked_msg.split(' ')
+
+    for word in cracked_msg_verify:
+      word = re.sub(r'[^A-Za-z]+','', word)
+      if word.lower() in word_list or word in name_list:
+        verified_words += 1
+      else:
+        pass
+    percentage = int(verified_words // len(cracked_msg_verify) * 100)
+    if percentage >= 50:
+      return cracked_msg
+  if percentage < 50: 
     return ""
-
-def count_words(text):
-    # returns a count of real words
-    candidate_words = text.split()
-
-    word_count = 0
-
-    for candidate in candidate_words:
-        word = re.sub(r'[^A-Za-z]+','', candidate)
-        if word.lower() in word_list or word in name_list:
-            word_count += 1
-        else:
-            pass
-
-    return word_count
-
-
-           
